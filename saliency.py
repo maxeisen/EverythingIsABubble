@@ -2,6 +2,7 @@ import tweepy
 import secrets
 import os, random
 import sched, time
+import glob
 from datetime import datetime
 from PIL import Image
 
@@ -16,21 +17,24 @@ s=sched.scheduler(time.time, time.sleep)
 
 # Pick 4 random images from faces folder and tweet stitched image after generation
 def pickImages(sc):
-    image1 = random.choice(os.listdir("C:\\Users\\maxei\\Code\\EverythingIsABubble\\faces"))
-    image2 = random.choice(os.listdir("C:\\Users\\maxei\\Code\\EverythingIsABubble\\faces"))
-    image3 = random.choice(os.listdir("C:\\Users\\maxei\\Code\\EverythingIsABubble\\faces"))
-    image4 = random.choice(os.listdir("C:\\Users\\maxei\\Code\\EverythingIsABubble\\faces"))
-    (imageName, imagePath) = generateStitchedImage(image1, image2, image3, image4)
-    bot.update_with_media(imagePath, imageName)
-    now=datetime.now()
-    currentTime=now.strftime("%H:%M:%S")
-    print("Tweeted "+imageName+" at "+currentTime)
-    s.enter(frequency, 1, pickImages, (sc,))
+    age = str(random.randint(20,65))
+    gender = str(random.randint(0,1))
+    owd = os.getcwd()
+    os.chdir("C:\\Users\\maxei\\Code\\EverythingIsABubble\\faces")
+    whiteImages = glob.glob(age+"_"+gender+"_0*")
+    nonWhiteImages = glob.glob(age+"_"+gender+"_[1-3]*")
+    os.chdir(owd)
+    whiteImage1 = random.choice(whiteImages)
+    whiteImage2 = random.choice(whiteImages)
+    nonWhiteImage1 = random.choice(nonWhiteImages)
+    nonWhiteImage2 = random.choice(nonWhiteImages)
+    (imageName, imagePath) = generateStitchedImage(whiteImage1, whiteImage2, nonWhiteImage1, nonWhiteImage2)
+    tweetImage(imageName, imagePath, age, int(gender), sc)
 
 # Generate stitched image of 4 inputted images
 def generateStitchedImage(i1, i2, i3, i4):
     basePath = "C:\\Users\\maxei\\Code\\EverythingIsABubble\\faces\\"
-    fileName=i1[0:3]+i2[0:3]+i3[0:3]+i4[0:2]+".jpeg"
+    fileName=i1[0:6]+"-"+i2[0:6]+"-"+i3[0:6]+"-"+i4[0:6]+".jpeg"
     image1 = Image.open(basePath+i1)
     image2 = Image.open(basePath+i2)
     image3 = Image.open(basePath+i3)
@@ -52,6 +56,15 @@ def generateStitchedImage(i1, i2, i3, i4):
     currentTime=now.strftime("%H:%M:%S")
     print("Generated "+fileName+" at "+currentTime)
     return (fileName, generatedImagePath)
+
+def tweetImage(imageName, imagePath, age, gender, sc):
+    genders = ["male", "female"]
+    status = imageName + " - four " + genders[gender] + " " + age + "-year-olds."
+    bot.update_with_media(imagePath, status)
+    now=datetime.now()
+    currentTime=now.strftime("%H:%M:%S")
+    print("Tweeted "+imageName+" at "+currentTime)
+    s.enter(frequency, 1, pickImages, (sc,))
 
 pickImages(s)
 s.run()
