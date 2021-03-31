@@ -1,7 +1,5 @@
 import tweepy
 import secrets
-import stocks
-import cryptos
 import os, random
 import sched, time
 from datetime import datetime
