@@ -11,11 +11,11 @@ auth=tweepy.OAuthHandler(secrets.API_KEY, secrets.API_KEY_SECRET)
 auth.set_access_token(secrets.ACCESS_TOKEN, secrets.ACCESS_TOKEN_SECRET)
 bot=tweepy.API(auth)
 
-# Setup timer to Tweet every {frequency} seconds
-frequency=300
+# Setup timer to tweet every {frequency} seconds
+frequency=180
 s=sched.scheduler(time.time, time.sleep)
 
-# Pick 4 random images from faces folder and tweet stitched image after generation
+# Pick 4 random images from faces folder and call tweet function
 def pickImages(sc):
     age = str(random.randint(20,65))
     gender = str(random.randint(0,1))
@@ -24,17 +24,15 @@ def pickImages(sc):
     whiteImages = glob.glob(age+"_"+gender+"_0*")
     nonWhiteImages = glob.glob(age+"_"+gender+"_[1-3]*")
     os.chdir(owd)
-    whiteImage1 = random.choice(whiteImages)
-    whiteImage2 = random.choice(whiteImages)
-    nonWhiteImage1 = random.choice(nonWhiteImages)
-    nonWhiteImage2 = random.choice(nonWhiteImages)
-    (imageName, imagePath) = generateStitchedImage(whiteImage1, whiteImage2, nonWhiteImage1, nonWhiteImage2)
+    whitePicks = random.sample(whiteImages, 2)
+    nonWhitePicks = random.sample(nonWhiteImages, 2)
+    (imageName, imagePath) = generateStitchedImage(whitePicks[0], whitePicks[1], nonWhitePicks[0], nonWhitePicks[1])
     tweetImage(imageName, imagePath, age, int(gender), sc)
 
 # Generate stitched image of 4 inputted images
 def generateStitchedImage(i1, i2, i3, i4):
     basePath = "C:\\Users\\maxei\\Code\\EverythingIsABubble\\faces\\"
-    fileName=i1[0:6]+"-"+i2[0:6]+"-"+i3[0:6]+"-"+i4[0:6]+".jpeg"
+    fileName = i1[0:6]+"-"+i2[0:6]+"-"+i3[0:6]+"-"+i4[0:6]+".jpeg"
     image1 = Image.open(basePath+i1)
     image2 = Image.open(basePath+i2)
     image3 = Image.open(basePath+i3)
@@ -49,21 +47,22 @@ def generateStitchedImage(i1, i2, i3, i4):
     generatedImage.paste(im=image1, box=(0,0))
     generatedImage.paste(im=image2, box=(0,height1))
     generatedImage.paste(im=image3, box=(0,height1+height2))
-    generatedImage.paste(im=image4, box=(0, height1+height2+height3))
+    generatedImage.paste(im=image4, box=(0,height1+height2+height3))
     generatedImagePath = "C:\\Users\\maxei\\Code\\EverythingIsABubble\\tweetable\\"+fileName
     generatedImage.save(generatedImagePath)
-    now=datetime.now()
-    currentTime=now.strftime("%H:%M:%S")
-    print("Generated "+fileName+" at "+currentTime)
+    now = datetime.now()
+    currentTime = now.strftime("%H:%M:%S")
+    print("\nGenerated "+fileName+" at "+currentTime)
     return (fileName, generatedImagePath)
 
+# Tweet generated image and report to console
 def tweetImage(imageName, imagePath, age, gender, sc):
     genders = ["male", "female"]
     status = imageName + " - four " + genders[gender] + " " + age + "-year-olds."
     bot.update_with_media(imagePath, status)
-    now=datetime.now()
-    currentTime=now.strftime("%H:%M:%S")
-    print("Tweeted "+imageName+" at "+currentTime)
+    now = datetime.now()
+    currentTime = now.strftime("%H:%M:%S")
+    print("Tweeted at "+currentTime+": "+status)
     s.enter(frequency, 1, pickImages, (sc,))
 
 pickImages(s)
